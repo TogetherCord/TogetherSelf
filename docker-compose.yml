@@ -1,0 +1,28 @@
+version: '3'
+services:
+  client1:
+    image: client1-img
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 68M
+    networks:
+      - webnet
+  client2:
+    image: client1-img
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 68M
+    networks:
+      - webnet
+
+
+networks:
+  webnet:
