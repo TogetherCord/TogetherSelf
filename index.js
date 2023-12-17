@@ -3,6 +3,7 @@ const
     dotenv = require("dotenv"),
     client = new Discord.Client({checkUpdate: false})
     Redis = require('ioredis');
+    spoofcustomstatus = require('./data/statuschanger.json')
     redis = new Redis({
         host: '172.17.0.2',
         port: 6379,
@@ -40,13 +41,46 @@ client.on("ready", async () => {
 
     redis.on('message', (channel, message) => {
         switch(message) {
-            case 'test':
-                console.log("test with docker api")
+            case 'hypesquad-balance':
+                client.user.setHypeSquad('HOUSE_BALANCE')
                 break;
-            case 'stop':
+
+            case 'hypesquad-bravery':
+                client.user.setHypeSquad('HOUSE_BRAVERY')
+                break;
+
+            case 'hypesquad-brilliance':
+                client.user.setHypeSquad('HOUSE_BRILLIANCE')
+                break;
+
+            case 'hypesquad-none':
+                client.user.setHypeSquad('LEAVE')
+                break;
+
+            case 'status-spoof':
+            function getRandomItem(array, previousItem) {
+                var randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * array.length);
+                } while (array[randomIndex] === previousItem);
+
+                return array[randomIndex];
+            }
+
+                setInterval(() => {
+                    var randomStatus = getRandomItem(spoofcustomstatus.status, randomStatus);
+                    var randomEmoji = getRandomItem(spoofcustomstatus.emoji, randomEmoji);
+
+                    client.settings.setCustomStatus({
+                        status: spoofcustomstatus.pointstatus,
+                        text: randomStatus,
+                        emoji: `${randomEmoji}`,
+                        expires: null,
+                    });
+                }, 3000);
                 break;
             default:
-                console.log("default")
+                console.log("No action found for " + message);
                 break;
         }
     })
