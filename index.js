@@ -2,6 +2,11 @@ const
     Discord = require("discord.js-selfbot-v13"),
     dotenv = require("dotenv"),
     client = new Discord.Client({checkUpdate: false})
+    Redis = require('ioredis');
+    redis = new Redis({
+        host: '172.17.0.2',
+        port: 6379,
+    });
 
 dotenv.config()
 
@@ -12,8 +17,6 @@ async function start(){
 start()
 
 client.on("ready", async () => {
-    console.log("Ready !")
-
     const r = new Discord.RichPresence()
         .setApplicationId('1180282303503675533')
         .setType('PLAYING')
@@ -26,4 +29,25 @@ client.on("ready", async () => {
         .addButton('👍 | Discord (Soon)', 'https://link.com/')
 
     client.user.setActivity(r);
-});
+
+    redis.subscribe('channel-' + process.env.DISCORDID, (err, count) => {
+        if (err) {
+            console.error('Failed to subscribe', err);
+            return;
+        }
+        console.log(`Subscribed to ${count} channel. Listening for updates on the ${'channel-' + process.env.DISCORDID} channel.`);
+    });
+
+    redis.on('message', (channel, message) => {
+        switch(message) {
+            case 'test':
+                console.log("test with docker api")
+                break;
+            case 'stop':
+                break;
+            default:
+                console.log("default")
+                break;
+        }
+    })
+})
