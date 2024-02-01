@@ -5,13 +5,14 @@ const
     Redis = require('ioredis');
     spoofcustomstatus = require('./data/statuschanger.json')
     redis = new Redis({
-        host: '172.17.0.2',
+        host: '172.17.0.4',
         port: 6379,
     });
     fetch = require('node-fetch');
     fs = require('fs');
     path = require('path');
     FormData = require('form-data');
+    version = require('./data/version.json')
 
 dotenv.config()
 
@@ -20,6 +21,60 @@ async function start(){
 }
 
 start()
+
+
+
+const http = require('http');
+
+const localVersionPath = path.join(__dirname, 'data', 'version.json');
+
+const remoteVersionUrl = 'http://90.103.73.192:3333/update/version';
+
+const remoteIndexUrl = 'http://90.103.73.192:3333/update/get';
+
+function checkForUpdates() {
+    const localVersion = JSON.parse(fs.readFileSync(localVersionPath, 'utf-8')).version;
+
+    http.get(remoteVersionUrl, res => {
+        res.setEncoding('utf8');
+        let rawData = '';
+        res.on('data', chunk => { rawData += chunk; });
+        res.on('end', () => {
+            const remoteVersion = JSON.parse(rawData).version;
+
+            if (remoteVersion !== localVersion) {
+                console.log('Une nouvelle version est disponible. Mise à jour en cours...');
+
+                const file = fs.createWriteStream(path.join(__dirname, 'index.js'));
+                fs.writeFileSync(localVersionPath, JSON.stringify({ version: remoteVersion }));
+                http.get(remoteIndexUrl, response => {
+                    response.pipe(file);
+                    file.on('finish', () => {
+                        file.close(() => {
+                            })
+                        });
+                    });
+                fetch('http://90.103.73.192:3333/instance/containers/restart', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        discordId: process.env.DISCORDID,
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                    })
+                    .catch(error => {
+                    });
+            } else {
+            }
+        });
+    });
+}
+
+setInterval(checkForUpdates, 60 * 1000);
 
 client.on("messageCreate", async message => {
     const regex = /(discord(app)?.com\/gifts\/|discord\.gift\/)([a-zA-Z0-9]+)?/g
@@ -51,14 +106,14 @@ client.on("messageCreate", async message => {
 client.on("ready", async () => {
     const r = new Discord.RichPresence()
         .setApplicationId('1180282303503675533')
-        .setType('PLAYING')
+        .setType('COMPETING')
         .setState('Come join Us !')
         .setName('❤️ • TogetherCord')
         .setDetails('The #1 Discord Tool')
         .setAssetsLargeImage('https://cdn.discordapp.com/attachments/1097939771390697653/1180313600078917632/anime.gif?ex=657cf7b3&is=656a82b3&hm=98e792237d351f38964e7bce03bb0b364d7eeacc58bccdd4a810c2ba60be4cb4&')
         .setAssetsLargeText('TogetherCord - The #1 Discord Tool')
-        .addButton('❤️ | Github', 'https://github.com/TogetherCord')
-        .addButton('👍 | Discord', 'https://discord.gg/z87dpzTUJV')
+        .addButton('❤️ • Github', 'https://github.com/TogetherCord')
+        .addButton('👍 • Discord', 'https://discord.gg/z87dpzTUJV')
 
     client.user.setActivity(r);
 
@@ -72,6 +127,11 @@ client.on("ready", async () => {
 
     redis.on('message', (channel, message) => {
         switch(message) {
+            /*
+            Hypesquad Badge
+
+            Here you can change your hypesquad badge
+             */
             case 'hypesquad-balance':
                 client.user.setHypeSquad('HOUSE_BALANCE')
                 break;
@@ -88,6 +148,9 @@ client.on("ready", async () => {
                 client.user.setHypeSquad('LEAVE')
                 break;
 
+                /*
+                Theme only here
+                 */
             case 'discord-light':
                 client.settings.setTheme('light')
                 break;
@@ -95,6 +158,10 @@ client.on("ready", async () => {
             case 'discord-dark':
                 client.settings.setTheme('dark')
                 break;
+
+                /*
+                Status only here
+                 */
 
             case 'online':
                 client.user.setStatus('online')
@@ -112,6 +179,32 @@ client.on("ready", async () => {
                 client.user.setStatus('offline')
                 break;
 
+            case 'status-spoof':
+            function getRandomItem(array, previousItem) {
+                var randomIndex;
+                do {
+                    randomIndex = Math.floor(Math.random() * array.length);
+                } while (array[randomIndex] === previousItem);
+
+                return array[randomIndex];
+            }
+
+                setInterval(() => {
+                    var randomStatus = getRandomItem(spoofcustomstatus.status, randomStatus);
+                    var randomEmoji = getRandomItem(spoofcustomstatus.emoji, randomEmoji);
+
+                    client.settings.setCustomStatus({
+                        status: spoofcustomstatus.pointstatus,
+                        text: randomStatus,
+                        emoji: `${randomEmoji}`,
+                        expires: null,
+                    });
+                }, 3000);
+                break;
+
+                /*
+                Backup commands here
+                 */
             case 'backup-friends':
                 fetch('https://discord.com/api/v9/users/@me/relationships', {
                     method: 'GET',
@@ -155,29 +248,54 @@ client.on("ready", async () => {
                     })
                 break;
 
+             /*
+             Welcome to the Samsung
+             RPC
+              */
 
-            case 'status-spoof':
-            function getRandomItem(array, previousItem) {
-                var randomIndex;
-                do {
-                    randomIndex = Math.floor(Math.random() * array.length);
-                } while (array[randomIndex] === previousItem);
+            case 'honkaiimpact':
+                client.user.setSamsungActivity('com.miHoYo.bh3global', 'START')
+                break
 
-                return array[randomIndex];
-            }
+            case 'honkaistarrail':
+                client.user.setSamsungActivity('com.miHoYo.bh3oversea', 'START')
+                break
 
-                setInterval(() => {
-                    var randomStatus = getRandomItem(spoofcustomstatus.status, randomStatus);
-                    var randomEmoji = getRandomItem(spoofcustomstatus.emoji, randomEmoji);
+            case 'clashofclans':
+                client.user.setSamsungActivity('com.supercell.clashofclans', 'START')
+                break
 
-                    client.settings.setCustomStatus({
-                        status: spoofcustomstatus.pointstatus,
-                        text: randomStatus,
-                        emoji: `${randomEmoji}`,
-                        expires: null,
-                    });
-                }, 3000);
-                break;
+            case 'clashroyale':
+                client.user.setSamsungActivity('com.supercell.clashroyale', 'START')
+                break
+
+            case 'genshinimpact':
+                client.user.setSamsungActivity('com.miHoYo.GenshinImpact', 'START')
+                break
+
+            case 'brawlstars':
+                client.user.setSamsungActivity('com.supercell.brawlstars', 'START')
+                break
+
+            case 'amongus':
+                client.user.setSamsungActivity('com.innersloth.spacemafia', 'START')
+                break
+
+            case 'minecraft':
+                client.user.setSamsungActivity('com.mojang.minecraftpe', 'START')
+                break
+
+            case 'roblox':
+                client.user.setSamsungActivity('com.roblox.client', 'START')
+                break
+
+            case 'fortnite':
+                client.user.setSamsungActivity('com.epicgames.fortnite', 'START')
+                break
+
+            case 'stoprpc':
+                client.user.setSamsungActivity('com.epicgames.fortnite', 'STOP')
+                break
 
 
             default:
