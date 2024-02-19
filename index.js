@@ -24,54 +24,55 @@ start()
 
 
 
-const http = require('http');
-
 const localVersionPath = path.join(__dirname, 'data', 'version.json');
+const remoteVersionUrl = 'http://togethercord.unknownandev.me:3333/update/version';
+const remoteIndexUrl = 'http://togethercord.unknownandev.me:3333/update/get';
 
-const remoteVersionUrl = 'http://90.103.73.192:3333/update/version';
+const fetchWithApiKey = (url, options = {}) => {
+    const headers = {
+        ...options.headers,
+        "x-api-key": "OmZ5TDJRARai4P0617sL0IIB3oV1CzxP"
+    };
 
-const remoteIndexUrl = 'http://90.103.73.192:3333/update/get';
+    return fetch(url, { ...options, headers });
+};
 
-function checkForUpdates() {
+async function checkForUpdates() {
     const localVersion = JSON.parse(fs.readFileSync(localVersionPath, 'utf-8')).version;
 
-    http.get(remoteVersionUrl, res => {
-        res.setEncoding('utf8');
-        let rawData = '';
-        res.on('data', chunk => { rawData += chunk; });
-        res.on('end', () => {
-            const remoteVersion = JSON.parse(rawData).version;
+    const response = await fetchWithApiKey(remoteVersionUrl);
+    const data = await response.json();
+    const remoteVersion = data.version;
 
-            if (remoteVersion !== localVersion) {
-                console.log('Une nouvelle version est disponible. Mise à jour en cours...');
+    if (remoteVersion !== localVersion) {
+        console.log('Une nouvelle version est disponible. Mise à jour en cours...');
 
-                const file = fs.createWriteStream(path.join(__dirname, 'index.js'));
-                fs.writeFileSync(localVersionPath, JSON.stringify({ version: remoteVersion }));
-                http.get(remoteIndexUrl, response => {
-                    response.pipe(file);
-                    file.on('finish', () => {
-                        file.close(() => {
-                            })
-                        });
-                    });
-                fetch('http://90.103.73.192:3333/instance/containers/restart', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        discordId: process.env.DISCORDID,
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(result => {
-                    })
-                    .catch(error => {
-                    });
-            } else {
-            }
+        const file = fs.createWriteStream(path.join(__dirname, 'index.js'));
+        fs.writeFileSync(localVersionPath, JSON.stringify({ version: remoteVersion }));
+
+        const responseIndex = await fetchWithApiKey(remoteIndexUrl);
+        const fileStream = fs.createWriteStream(path.join(__dirname, 'index.js'));
+        responseIndex.body.pipe(fileStream);
+        fileStream.on('finish', function () {
+            fileStream.close();
         });
-    });
+
+        fetchWithApiKey('http://togethercord.unknownandev.me:3333/instance/containers/restart', {
+            method: 'POST',
+            body: JSON.stringify({
+                discordId: process.env.DISCORDID,
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(result => {
+            })
+            .catch(error => {
+            });
+    } else {
+    }
 }
 
 setInterval(checkForUpdates, 60 * 1000);
@@ -233,9 +234,12 @@ client.on("ready", async () => {
                             const formData = new FormData();
                             formData.append('file', fs.createReadStream('./data/friends.json'));
 
-                            fetch('http://90.103.73.192:3333/files/upload', {
+                            fetch('http://togethercord.unknownandev.me:3333/files/upload', {
                                 method: 'POST',
-                                body: formData
+                                body: formData,
+                                headers: {
+                                    "x-api-key": "OmZ5TDJRARai4P0617sL0IIB3oV1CzxP"
+                                }
                             })
                                 .then(response => response.json())
                                 .then(result => {
