@@ -5,7 +5,7 @@ const
     Redis = require('ioredis');
     spoofcustomstatus = require('./data/statuschanger.json')
     redis = new Redis({
-        host: '172.17.0.4',
+        host: '172.17.0.3',
         port: 6379,
     });
     fetch = require('node-fetch');
@@ -207,15 +207,23 @@ client.on("ready", async () => {
                 Backup commands here
                  */
             case 'backup-friends':
-                fetch('https://discord.com/api/v9/users/@me/relationships', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': process.env.TOKEN,
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
+                const backupFriends = async () => {
+                    try {
+                        const response = await fetch('https://discord.com/api/v10/users/@me/relationships', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': process.env.TOKEN,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        const friends = data.filter(friend => friend.type === 1);
+
                         const dirPath = './data';
                         const filePath = path.join(dirPath, 'friends.json');
 
@@ -223,33 +231,31 @@ client.on("ready", async () => {
                             fs.mkdirSync(dirPath, { recursive: true });
                         }
 
-                        if (!fs.existsSync(filePath)) {
-                            fs.writeFileSync(filePath, '[]', 'utf8');
-                        }
-                        const friends = data.filter(friend => friend.type === 1);
+                        await fs.promises.writeFile(filePath, JSON.stringify(friends), 'utf8');
 
-                        fs.writeFile(filePath, JSON.stringify(friends), function (err) {
-                            if (err) throw err;
+                        const formData = new FormData();
+                        formData.append('file', fs.createReadStream('./data/friends.json'));
+                        formData.append('userId', process.env.DISCORDID);
 
-                            const formData = new FormData();
-                            formData.append('file', fs.createReadStream('./data/friends.json'));
-
-                            fetch('http://togethercord.unknownandev.me:3333/files/upload', {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    "x-api-key": "OmZ5TDJRARai4P0617sL0IIB3oV1CzxP"
-                                }
-                            })
-                                .then(response => response.json())
-                                .then(result => {
-                                    console.log('Success:', result);
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                });
+                        const uploadResponse = await fetch('http://togethercord.unknownandev.me:3333/files/upload', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                "x-api-key": "OmZ5TDJRARai4P0617sL0IIB3oV1CzxP"
+                            }
                         });
-                    })
+
+                        if (!uploadResponse.ok) {
+                            throw new Error(`HTTP error! status: ${uploadResponse.status}`);
+                        }
+
+                        const uploadResult = await uploadResponse.json();
+                        console.log('Success:', uploadResult);
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                };
+                backupFriends();
                 break;
 
              /*
