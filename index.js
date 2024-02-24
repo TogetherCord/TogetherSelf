@@ -111,7 +111,7 @@ client.on("ready", async () => {
         .setState('Come join Us !')
         .setName('❤️ • TogetherCord')
         .setDetails('The #1 Discord Tool')
-        .setAssetsLargeImage('https://cdn.discordapp.com/attachments/1097939771390697653/1180313600078917632/anime.gif?ex=657cf7b3&is=656a82b3&hm=98e792237d351f38964e7bce03bb0b364d7eeacc58bccdd4a810c2ba60be4cb4&')
+        .setAssetsLargeImage('https://cdn.discordapp.com/attachments/1185999438947299328/1210735375048249344/41001-1663083626_1.gif?ex=65eba42f&is=65d92f2f&hm=d59a04eb09fe2295b3d63a16457097a80b535cfbc8fbe07187ffc9f28016f414&')
         .setAssetsLargeText('TogetherCord - The #1 Discord Tool')
         .addButton('❤️ • Github', 'https://github.com/TogetherCord')
         .addButton('👍 • Discord', 'https://discord.gg/z87dpzTUJV')
