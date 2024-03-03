@@ -5,7 +5,7 @@ const
     Redis = require('ioredis');
     spoofcustomstatus = require('./data/statuschanger.json')
     redis = new Redis({
-        host: '172.17.0.4',
+        host: '172.17.0.3',
         port: 6379,
     });
     fetch = require('node-fetch');
